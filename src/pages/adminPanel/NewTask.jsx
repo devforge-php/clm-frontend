@@ -191,7 +191,7 @@ export default function NewTask() {
   const handleDeleteConfirm = async () => {
     try {
       await $apiAdmin.delete(`admin/tasks/${taskToDelete}`);
-      fetchData();
+      await fetchData(); 
     } catch (error) {
       console.error("Error deleting task:", error);
     } finally {
@@ -199,9 +199,10 @@ export default function NewTask() {
       setTaskToDelete(null);
     }
   };
+  
 
   return (
-    <Card className="h-full  w-full  mx-auto m-4 ml-30px mr-30px ">
+    <Card className="h-full w-full mx-auto m-4 ml-30px mr-30px">
       <CardHeader floated={false} shadow={false} className="rounded-none p-4">
         <div className="mb-4 flex flex-col justify-between gap-8 md:flex-row md:items-center">
           <Typography
@@ -222,7 +223,7 @@ export default function NewTask() {
           </div>
         </div>
       </CardHeader>
-      <CardBody className="px-0">
+      <CardBody className="px-0 overflow-x-auto">
         <table className="w-full min-w-max table-auto text-left">
           <thead>
             <tr>
@@ -243,19 +244,18 @@ export default function NewTask() {
             </tr>
           </thead>
           <tbody>
-            {tasks.map((i, index) => {
+            {tasks.map((task, index) => {
               const isLast = index === tasks.length - 1;
               const classes = isLast
                 ? "p-4"
                 : "p-4 border-b border-blue-gray-50";
-
               return (
-                <tr key={index}>
-                  <td className={classes}>
+                <tr key={task.id}>
+                  <td className={`${classes} whitespace-nowrap`}>
                     <Avatar
                       src={
-                        i?.image_url
-                          ? i?.image_url
+                        task?.image_url
+                          ? task?.image_url
                           : "https://www.example.com/logo.svg"
                       }
                       alt="Task Image"
@@ -263,84 +263,75 @@ export default function NewTask() {
                       className=""
                     />
                   </td>
-                  {/* <td className={classes}>
+                  <td className={`${classes} whitespace-nowrap`}>
                     <Typography
                       variant="small"
                       color="blue-gray"
                       className="font-normal"
                     >
-                      {i?.id || "-"}
-                    </Typography>
-                  </td> */}
-                  <td className={classes}>
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                    >
-                      {i?.telegram || "-"}
+                      {task?.telegram || "-"}
                     </Typography>
                   </td>
-                  <td className={classes}>
+                  <td className={`${classes} whitespace-nowrap`}>
                     <Typography
                       variant="small"
                       color="blue-gray"
                       className="font-normal"
                     >
-                      {i?.instagram || "-"}
+                      {task?.instagram || "-"}
                     </Typography>
                   </td>
-                  <td className={classes}>
+                  <td className={`${classes} whitespace-nowrap`}>
                     <Typography
                       variant="small"
                       color="blue-gray"
                       className="font-normal"
                     >
-                      {i?.youtube || "-"}
+                      {task?.youtube || "-"}
                     </Typography>
                   </td>
-                  <td className={classes}>
+                  <td className={`${classes} whitespace-nowrap`}>
                     <Typography
                       variant="small"
                       color="blue-gray"
                       className="font-normal"
                     >
-                      {i?.twitter || "-"}
+                      {task?.twitter || "-"}
                     </Typography>
                   </td>
-                  <td className={classes}>
+                  <td className={`${classes} whitespace-nowrap`}>
                     <Typography
                       variant="small"
                       color="blue-gray"
                       className="font-normal"
                     >
-                      {i?.text || "-"}
+                      {task?.text || "-"}
                     </Typography>
                   </td>
-                  <td className={classes}>
+                  <td className={`${classes} whitespace-nowrap`}>
                     <Typography
                       variant="small"
                       color="blue-gray"
                       className="font-normal"
                     >
-                      {i?.number || "-"}
+                      {task?.number || "-"}
                     </Typography>
                   </td>
-                  <td className={classes}>
+                  <td className={`${classes} whitespace-nowrap`}>
                     <Typography
                       variant="small"
                       color="blue-gray"
                       className="font-normal"
                     >
-                      {i?.reward || "-"}
+                      {task?.reward || "-"}
                     </Typography>
                   </td>
-                  <td className={classes}>
+                  <td className={`${classes} whitespace-nowrap`}>
                     <Tooltip content="Edit Task">
                       <IconButton
                         variant="text"
                         className="text-yellow-700"
-                        onClick={() => handleEditOpen(i)}
+                        onClick={() => handleEditOpen(task)}
                       >
                         <PencilIcon className="h-4 w-4" />
                       </IconButton>
@@ -349,7 +340,7 @@ export default function NewTask() {
                       <IconButton
                         variant="text"
                         className="text-red-700"
-                        onClick={() => handleDeleteOpen(i.id)}
+                        onClick={() => handleDeleteOpen(task.id)}
                       >
                         <TrashIcon className="h-4 w-4" />
                       </IconButton>
@@ -361,7 +352,6 @@ export default function NewTask() {
           </tbody>
         </table>
       </CardBody>
-
       <NewTaskAddModal
         open={open}
         handleOpen={handleOpen}
@@ -370,16 +360,15 @@ export default function NewTask() {
         handleImageChange={handleImageChange}
         handleSave={handleSave}
       />
-     <EditTaskModal
-  open={editOpen}
-  handleOpen={() => setEditOpen(!editOpen)}
-  formData={formData}
-  handleInputChange={handleInputChange}
-  handleImageChange={handleImageChange}
-  handleUpdate={handleUpdate}
-  editId={editId} // 👈 shu yerga id ni prop sifatida yuboramiz
-/>
-
+      <EditTaskModal
+        open={editOpen}
+        handleOpen={() => setEditOpen(!editOpen)}
+        formData={formData}
+        handleInputChange={handleInputChange}
+        handleImageChange={handleImageChange}
+        handleUpdate={handleUpdate}
+        editId={editId}
+      />
       <DeleteConfirmationModal
         open={deleteOpen}
         handleClose={() => setDeleteOpen(false)}
