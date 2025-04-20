@@ -23,7 +23,7 @@ export function CoinClick() {
       id: 1,
       name: "Gold",
       img: "/goldcoin.webp",
-      amount: "5000 so'm",
+      amount: "8000 so'm",
       count: 5,
       coin: "GOLD",
     },
