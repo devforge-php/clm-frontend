@@ -201,7 +201,7 @@ export default function NewTask() {
   };
 
   return (
-    <Card className="h-full  w-full  mx-auto m-4 ml-30px ">
+    <Card className="h-full  w-full  mx-auto m-4 ml-30px mr-30px ">
       <CardHeader floated={false} shadow={false} className="rounded-none p-4">
         <div className="mb-4 flex flex-col justify-between gap-8 md:flex-row md:items-center">
           <Typography
