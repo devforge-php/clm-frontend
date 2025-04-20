@@ -1,3 +1,4 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AppLayaut } from "./layouts";
 import Dashboards from "./pages/Dashboards";
 import Referalget from "./pages/referal/Referalget";
