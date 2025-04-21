@@ -70,7 +70,7 @@ export default function AvatarMenu() {
 
   const handleSignOut = () => {
     localStorage.clear(); 
-    navigate("/login"); 
+    navigate("/"); 
   };
 
 
