@@ -21,7 +21,7 @@ export default function SignOut({ isOpen, onClose}) {
     localStorage.removeItem("token"); // yoki sessionStorage.removeItem("token");
 
     // Login sahifasiga yo‘naltiramiz
-    navigate("/login");
+    navigate("/");
   };
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50" onClick={onClose}>
