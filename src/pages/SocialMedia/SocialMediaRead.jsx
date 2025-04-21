@@ -226,7 +226,11 @@ export default function SocialMediaTable() {
           setNewUsernames={setNewUsernames}
           handleAdd={handleAddUsernames}
         />
-     
+        <SocialMediaTableDelete
+          open={openDelete}
+          handleClose={() => setOpenDelete(false)}
+          handleDelete={handleDelete}
+        />
       </Card>
     </div>
   );
