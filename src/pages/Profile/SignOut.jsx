@@ -18,9 +18,7 @@ export default function SignOut({ isOpen, onClose}) {
   // Sign out confirm qilganda
   const handleSignOut = () => {
     // Tokenni o‘chiramiz
-    localStorage.removeItem("token"); // yoki sessionStorage.removeItem("token");
-
-    // Login sahifasiga yo‘naltiramiz
+    localStorage.clear(); 
     navigate("/");
   };
   return (
