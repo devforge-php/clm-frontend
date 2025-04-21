@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { PencilIcon, TrashIcon, UserPlusIcon } from "@heroicons/react/24/solid";
 import {
   Card,
@@ -17,9 +16,6 @@ import { Helmet } from "react-helmet";
 
 export default function SocialMediaTable() {
   const [usernames, setUsernames] = useState({});
-  const [socialMediaId, setSocialMediaId] = useState(null);
-  const [user, setUser] = useState("");
-  const [loading, setLoading] = useState(true);
   const [openEdit, setOpenEdit] = useState(false);
   const [openAdd, setOpenAdd] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
@@ -30,39 +26,20 @@ export default function SocialMediaTable() {
     youtube: "",
     twitter: "",
   });
-
+  const [user, setUser] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [socialMediaId, setSocialMediaId] = useState(null);
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   useEffect(() => {
-    // 1️⃣ Profilni yuklaymiz
+    fetchUsernames();
     fetchUserProfile();
-
-    // 2️⃣ Cache’da usernames bormi? Agar bo‘lsa, ishlatamiz, aks holda API’dan so‘raymiz
-    const cached = localStorage.getItem("usernames");
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      if (parsed && Object.keys(parsed).length > 0) {
-        setUsernames(parsed);
-        setLoading(false);
-      } else {
-        fetchUsernames();
-      }
-    } else {
-      fetchUsernames();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchUserProfile = async () => {
     try {
       const response = await $api.get("/profile");
       setUser(response.data.user.username);
-    } catch (err) {
-      if (err.response?.status === 401) {
-        localStorage.clear();
-        navigate("/login");
-      }
     } finally {
       setLoading(false);
     }
@@ -71,56 +48,69 @@ export default function SocialMediaTable() {
   const fetchUsernames = async () => {
     try {
       const response = await $api.get("/socialMedia");
-      // API: response.data === Array || { data: Array }
-      const dataArray = Array.isArray(response.data)
-        ? response.data
-        : response.data.data || [];
-      const firstItem = dataArray[0] || null;
-
+      const firstItem = response.data.data[0];
       if (firstItem) {
-        const { id, telegram, instagram, facebook, youtube, twitter } = firstItem;
-        const obj = {
+        const { id, telegram, instagram, facebook, youtube, twitter } =
+          firstItem;
+        setSocialMediaId(id); // bu yerda id'ni saqlaymiz
+        setUsernames({
           telegram: telegram || "",
           instagram: instagram || "",
           facebook: facebook || "",
           youtube: youtube || "",
           twitter: twitter || "",
-        };
-        setSocialMediaId(id);
-        setUsernames(obj);
-        localStorage.setItem("usernames", JSON.stringify(obj));
-      } else {
-        // Agar ma'lumot bo‘sh bo‘lsa, keshni ham tozalaymiz
-        setUsernames({});
-        localStorage.removeItem("usernames");
+        });
       }
-    } catch (err) {
-      console.error("Error fetching usernames:", err);
-      if (err.response?.status === 401) {
-        localStorage.clear();
+    } catch (error) {
+      console.error("Error fetching usernames:", error);
+      if (err?.status === 401) {
         navigate("/login");
+        localStorage.clear();
       }
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleSaveEdit = async (updated) => {
+  const handleSaveEdit = async (updatedUsernames) => {
     try {
       const params = new URLSearchParams();
-      Object.entries(updated).forEach(([key, val]) => {
-        if (val && val.trim() !== "") {
-          params.append(`${key}_user_name`, val.trim());
-        }
-      });
+
+      if (updatedUsernames.telegram)
+        params.append("telegram_user_name", updatedUsernames.telegram);
+      if (updatedUsernames.instagram)
+        params.append("instagram_user_name", updatedUsernames.instagram);
+      if (updatedUsernames.facebook)
+        params.append("facebook_user_name", updatedUsernames.facebook);
+      if (updatedUsernames.youtube)
+        params.append("youtube_user_name", updatedUsernames.youtube);
+      if (updatedUsernames.twitter)
+        params.append("twitter_user_name", updatedUsernames.twitter);
+
       if (socialMediaId) {
         await $api.put(`/socialMedia/${socialMediaId}?${params.toString()}`);
         await fetchUsernames();
+      } else {
+        console.warn("ID mavjud emas, PUT so‘rov yuborilmadi.");
       }
-    } catch (err) {
-      console.error("Error updating usernames:", err.response?.data || err.message);
+    } catch (error) {
+      console.error(
+        "Error updating usernames:",
+        error.response?.data || error.message
+      );
     } finally {
       setOpenEdit(false);
+    }
+  };
+
+  // Barcha linklarni o‘chirish uchun yangi handleDelete
+  const handleDelete = async () => {
+    try {
+      // Backend’da barcha ijtimoiy tarmoqlarni o‘chirish uchun umumiy endpoint ishlatamiz
+      await $api.delete("/socialMedia"); // Bu yerda umumiy DELETE so‘rovi yuboriladi
+      setUsernames({}); // Frontend’da usernames holatini tozalaymiz
+    } catch (error) {
+      console.error("Error deleting all usernames:", error);
+    } finally {
+      setOpenDelete(false);
     }
   };
 
@@ -133,26 +123,17 @@ export default function SocialMediaTable() {
         youtube_user_name: newData.youtube || "",
         twitter_user_name: newData.twitter || "",
       };
-      if (Object.values(payload).some((v) => v.trim() !== "")) {
+      const hasData = Object.values(payload).some(
+        (value) => value.trim() !== ""
+      );
+      if (hasData) {
         await $api.post("/socialMedia", payload);
         await fetchUsernames();
       }
-    } catch (err) {
-      console.error("Error adding usernames:", err);
+    } catch (error) {
+      console.error("Error adding usernames:", error);
     } finally {
       setOpenAdd(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      await $api.delete("/socialMedia");
-      setUsernames({});
-      localStorage.removeItem("usernames");
-    } catch (err) {
-      console.error("Error deleting all usernames:", err);
-    } finally {
-      setOpenDelete(false);
     }
   };
 
@@ -165,7 +146,6 @@ export default function SocialMediaTable() {
           content="View and manage your subscriber acquisition links for Instagram, Telegram, YouTube, Facebook, and X (Twitter)."
         />
       </Helmet>
-
       <Card className="w-full max-w-[900px] mx-auto mt-4 ml-2">
         <CardHeader floated={false} shadow={false} className="rounded-none">
           <div className="flex items-center justify-between gap-8 flex-wrap">
@@ -173,16 +153,29 @@ export default function SocialMediaTable() {
               {t("socialMediaLinks")}
             </Typography>
             <div className="flex gap-4">
-              <Button size="sm" onClick={() => setOpenEdit(true)}>
+              <Button
+                className="flex items-center gap-3"
+                size="sm"
+                onClick={() => setOpenEdit(true)}
+              >
                 <PencilIcon strokeWidth={2} className="h-4 w-4" /> Edit
               </Button>
-              <Button size="sm" onClick={() => setOpenAdd(true)}>
+              <Button
+                className="flex items-center gap-3"
+                size="sm"
+                onClick={() => setOpenAdd(true)}
+              >
                 <UserPlusIcon strokeWidth={2} className="h-4 w-4" /> Add
                 Username
               </Button>
-              <Button size="sm" color="red" onClick={() => setOpenDelete(true)}>
-                <TrashIcon strokeWidth={2} className="h-4 w-4" /> Delete All
-              </Button>
+              {/* <Button
+              className="flex items-center gap-3"
+              size="sm"
+              color="red"
+              onClick={() => setOpenDelete(true)}
+            >
+              <TrashIcon strokeWidth={2} className="h-4 w-4" /> Delete
+            </Button> */}
             </div>
           </div>
           <Typography variant="h5" color="gray" className="text-md">
@@ -242,4 +235,3 @@ export default function SocialMediaTable() {
     </div>
   );
 }
-// /////// voydododd
