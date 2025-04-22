@@ -32,8 +32,8 @@ export default function SocialMediaTable() {
   const { t } = useTranslation();
 
   useEffect(() => {
-    fetchUsernames();
     fetchUserProfile();
+    fetchUsernames();
   }, []);
 
   const fetchUserProfile = async () => {
@@ -48,11 +48,15 @@ export default function SocialMediaTable() {
   const fetchUsernames = async () => {
     try {
       const response = await $api.get("/socialMedia");
-      const firstItem = response.data.data[0];
-      if (firstItem) {
-        const { id, telegram, instagram, facebook, youtube, twitter } =
-          firstItem;
-        setSocialMediaId(id); // bu yerda id'ni saqlaymiz
+      // API qaytayotgan arrayni aniqlaymiz:
+      const items = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data.data)
+        ? response.data.data
+        : [];
+      if (items.length > 0) {
+        const { id, telegram, instagram, facebook, youtube, twitter } = items[0];
+        setSocialMediaId(id);
         setUsernames({
           telegram: telegram || "",
           instagram: instagram || "",
@@ -60,10 +64,14 @@ export default function SocialMediaTable() {
           youtube: youtube || "",
           twitter: twitter || "",
         });
+      } else {
+        // Hech narsa bo'lmasa, holatni tozalaymiz
+        setSocialMediaId(null);
+        setUsernames({});
       }
     } catch (error) {
       console.error("Error fetching usernames:", error);
-      if (err?.status === 401) {
+      if (error.response?.status === 401) {
         navigate("/login");
         localStorage.clear();
       }
@@ -73,7 +81,6 @@ export default function SocialMediaTable() {
   const handleSaveEdit = async (updatedUsernames) => {
     try {
       const params = new URLSearchParams();
-
       if (updatedUsernames.telegram)
         params.append("telegram_user_name", updatedUsernames.telegram);
       if (updatedUsernames.instagram)
@@ -101,12 +108,11 @@ export default function SocialMediaTable() {
     }
   };
 
-  // Barcha linklarni o‘chirish uchun yangi handleDelete
   const handleDelete = async () => {
     try {
-      // Backend’da barcha ijtimoiy tarmoqlarni o‘chirish uchun umumiy endpoint ishlatamiz
-      await $api.delete("/socialMedia"); // Bu yerda umumiy DELETE so‘rovi yuboriladi
-      setUsernames({}); // Frontend’da usernames holatini tozalaymiz
+      await $api.delete("/socialMedia");
+      setSocialMediaId(null);
+      setUsernames({});
     } catch (error) {
       console.error("Error deleting all usernames:", error);
     } finally {
@@ -123,9 +129,7 @@ export default function SocialMediaTable() {
         youtube_user_name: newData.youtube || "",
         twitter_user_name: newData.twitter || "",
       };
-      const hasData = Object.values(payload).some(
-        (value) => value.trim() !== ""
-      );
+      const hasData = Object.values(payload).some((v) => v.trim() !== "");
       if (hasData) {
         await $api.post("/socialMedia", payload);
         await fetchUsernames();
@@ -165,17 +169,16 @@ export default function SocialMediaTable() {
                 size="sm"
                 onClick={() => setOpenAdd(true)}
               >
-                <UserPlusIcon strokeWidth={2} className="h-4 w-4" /> Add
-                Username
+                <UserPlusIcon strokeWidth={2} className="h-4 w-4" /> Add Username
               </Button>
-              {/* <Button
-              className="flex items-center gap-3"
-              size="sm"
-              color="red"
-              onClick={() => setOpenDelete(true)}
-            >
-              <TrashIcon strokeWidth={2} className="h-4 w-4" /> Delete
-            </Button> */}
+              <Button
+                className="flex items-center gap-3"
+                size="sm"
+                color="red"
+                onClick={() => setOpenDelete(true)}
+              >
+                <TrashIcon strokeWidth={2} className="h-4 w-4" /> Delete
+              </Button>
             </div>
           </div>
           <Typography variant="h5" color="gray" className="text-md">
