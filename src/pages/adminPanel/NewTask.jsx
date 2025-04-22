@@ -378,7 +378,7 @@ export default function NewTask() {
   handleInputChange={handleInputChange}
   handleImageChange={handleImageChange}
   handleUpdate={handleUpdate}
-  editId={editId} // 👈 shu yerga id ni prop sifatida yuboramiz
+  editId={editId} 
 />
 
       <DeleteConfirmationModal

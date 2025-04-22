@@ -17,7 +17,6 @@ export default function SignOut({ isOpen, onClose}) {
   }, [onClose]);
   // Sign out confirm qilganda
   const handleSignOut = () => {
-    // Tokenni o‘chiramiz
     localStorage.clear(); 
     navigate("/");
   };

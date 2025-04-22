@@ -63,7 +63,7 @@ export default function SocialMediaTable() {
       }
     } catch (error) {
       console.error("Error fetching usernames:", error);
-      if (err?.status === 401) {
+      if (error?.status === 401) {
         navigate("/login");
         localStorage.clear();
       }
