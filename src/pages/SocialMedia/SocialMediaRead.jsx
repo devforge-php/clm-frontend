@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { PencilIcon, TrashIcon, UserPlusIcon } from "@heroicons/react/24/solid";
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { PencilIcon, UserPlusIcon } from "@heroicons/react/24/solid";
 import {
   Card,
   CardHeader,
@@ -11,144 +12,87 @@ import { $api } from "../../utils/index";
 import { useTranslation } from "react-i18next";
 import SocialMediaTableEdit from "../../components/SocialMediaTableEdit";
 import SocialMediaTableAdd from "../../components/SocialMediaTableAdd";
-import SocialMediaTableDelete from "../../components/SocialMediaTableDelete";
 import { Helmet } from "react-helmet";
 
 export default function SocialMediaTable() {
-  const [usernames, setUsernames] = useState({});
-  const [openEdit, setOpenEdit] = useState(false);
-  const [openAdd, setOpenAdd] = useState(false);
-  const [openDelete, setOpenDelete] = useState(false);
-  const [newUsernames, setNewUsernames] = useState({
-    telegram: "",
-    instagram: "",
-    facebook: "",
-    youtube: "",
-    twitter: "",
-  });
-  const [user, setUser] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [socialMediaId, setSocialMediaId] = useState(null);
+  const [openEdit, setOpenEdit] = React.useState(false);
+  const [openAdd, setOpenAdd] = React.useState(false);
   const { t } = useTranslation();
 
-  useEffect(() => {
-    fetchUserProfile();
-    fetchUsernames();
-  }, []);
-
-  const fetchUserProfile = async () => {
-    try {
-      const response = await $api.get("/profile");
-      setUser(response.data.user.username);
-    } finally {
-      setLoading(false);
+  // 1) Profile so‘rovi
+  const {
+    data: profile,
+    isLoading: profileLoading,
+  } = useQuery(
+    ["profile"],
+    () => $api.get("/profile").then((res) => res.data.user),
+    {
+      staleTime: 5 * 60 * 1000,      // 5 daqiqa ichida qaytmasa, cache’dan oladi
+      refetchOnWindowFocus: false,  // har oynaga qaytishda qaytarmaydi
     }
+  );
+
+  // 2) Social Media so‘rovi
+  const {
+    data: socialMedia,
+    isLoading: mediaLoading,
+  } = useQuery(
+    ["socialMedia"],
+    () =>
+      $api.get("/socialMedia").then((res) => {
+        const arr = Array.isArray(res.data)
+          ? res.data
+          : res.data.data || [];
+        return arr[0] || { id: null, telegram: "", instagram: "", facebook: "", youtube: "", twitter: "" };
+      }),
+    {
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+    }
+  );
+
+  // Darhol qo‘lga olingan data
+  const user = profile?.username || "Noma'lum";
+  const usernames = {
+    telegram: socialMedia.telegram,
+    instagram: socialMedia.instagram,
+    facebook: socialMedia.facebook,
+    youtube: socialMedia.youtube,
+    twitter: socialMedia.twitter,
   };
+  const socialMediaId = socialMedia.id;
 
-  const fetchUsernames = async () => {
-    try {
-      const response = await $api.get("/socialMedia");
-      // API qaytayotgan arrayni aniqlaymiz:
-      const items = Array.isArray(response.data)
-        ? response.data
-        : Array.isArray(response.data.data)
-        ? response.data.data
-        : [];
-      if (items.length > 0) {
-        const { id, telegram, instagram, facebook, youtube, twitter } = items[0];
-        setSocialMediaId(id);
-        setUsernames({
-          telegram: telegram || "",
-          instagram: instagram || "",
-          facebook: facebook || "",
-          youtube: youtube || "",
-          twitter: twitter || "",
-        });
-      } else {
-        // Hech narsa bo'lmasa, holatni tozalaymiz
-        setSocialMediaId(null);
-        setUsernames({});
-      }
-    } catch (error) {
-      console.error("Error fetching usernames:", error);
-      if (error.response?.status === 401) {
-        navigate("/login");
-        localStorage.clear();
-      }
+  // Edit va Add funksiyalari o‘xshash, faqat fetch keyin React Query invalidate qilamiz:
+  const queryClient = useQueryClient();
+
+  const handleSaveEdit = async (updated) => {
+    const params = new URLSearchParams();
+    Object.entries(updated).forEach(([k, v]) => {
+      if (v) params.append(`${k}_user_name`, v);
+    });
+    if (socialMediaId) {
+      await $api.put(`/socialMedia/${socialMediaId}?${params.toString()}`);
+      queryClient.invalidateQueries(["socialMedia"]);
     }
-  };
-
-  const handleSaveEdit = async (updatedUsernames) => {
-    try {
-      const params = new URLSearchParams();
-      if (updatedUsernames.telegram)
-        params.append("telegram_user_name", updatedUsernames.telegram);
-      if (updatedUsernames.instagram)
-        params.append("instagram_user_name", updatedUsernames.instagram);
-      if (updatedUsernames.facebook)
-        params.append("facebook_user_name", updatedUsernames.facebook);
-      if (updatedUsernames.youtube)
-        params.append("youtube_user_name", updatedUsernames.youtube);
-      if (updatedUsernames.twitter)
-        params.append("twitter_user_name", updatedUsernames.twitter);
-
-      if (socialMediaId) {
-        await $api.put(`/socialMedia/${socialMediaId}?${params.toString()}`);
-        await fetchUsernames();
-      } else {
-        console.warn("ID mavjud emas, PUT so‘rov yuborilmadi.");
-      }
-    } catch (error) {
-      console.error(
-        "Error updating usernames:",
-        error.response?.data || error.message
-      );
-    } finally {
-      setOpenEdit(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      await $api.delete("/socialMedia");
-      setSocialMediaId(null);
-      setUsernames({});
-    } catch (error) {
-      console.error("Error deleting all usernames:", error);
-    } finally {
-      setOpenDelete(false);
-    }
+    setOpenEdit(false);
   };
 
   const handleAddUsernames = async (newData) => {
-    try {
-      const payload = {
-        telegram_user_name: newData.telegram || "",
-        instagram_user_name: newData.instagram || "",
-        facebook_user_name: newData.facebook || "",
-        youtube_user_name: newData.youtube || "",
-        twitter_user_name: newData.twitter || "",
-      };
-      const hasData = Object.values(payload).some((v) => v.trim() !== "");
-      if (hasData) {
-        await $api.post("/socialMedia", payload);
-        await fetchUsernames();
-      }
-    } catch (error) {
-      console.error("Error adding usernames:", error);
-    } finally {
-      setOpenAdd(false);
+    const payload = {};
+    Object.entries(newData).forEach(([k, v]) => {
+      payload[`${k}_user_name`] = v || "";
+    });
+    if (Object.values(payload).some((v) => v.trim())) {
+      await $api.post("/socialMedia", payload);
+      queryClient.invalidateQueries(["socialMedia"]);
     }
+    setOpenAdd(false);
   };
 
   return (
     <div>
       <Helmet>
         <title>Social Media Links - CLM</title>
-        <meta
-          name="description"
-          content="View and manage your subscriber acquisition links for Instagram, Telegram, YouTube, Facebook, and X (Twitter)."
-        />
       </Helmet>
       <Card className="w-full max-w-[900px] mx-auto mt-4 ml-2">
         <CardHeader floated={false} shadow={false} className="rounded-none">
@@ -157,58 +101,36 @@ export default function SocialMediaTable() {
               {t("socialMediaLinks")}
             </Typography>
             <div className="flex gap-4">
-              <Button
-                className="flex items-center gap-3"
-                size="sm"
-                onClick={() => setOpenEdit(true)}
-              >
-                <PencilIcon strokeWidth={2} className="h-4 w-4" /> Edit
+              <Button size="sm" onClick={() => setOpenEdit(true)}>
+                <PencilIcon className="h-4 w-4" /> Edit
               </Button>
-              <Button
-                className="flex items-center gap-3"
-                size="sm"
-                onClick={() => setOpenAdd(true)}
-              >
-                <UserPlusIcon strokeWidth={2} className="h-4 w-4" /> Add Username
-              </Button>
-              <Button
-                className="flex items-center gap-3"
-                size="sm"
-                color="red"
-                onClick={() => setOpenDelete(true)}
-              >
-                <TrashIcon strokeWidth={2} className="h-4 w-4" /> Delete
+              <Button size="sm" onClick={() => setOpenAdd(true)}>
+                <UserPlusIcon className="h-4 w-4" /> Add Username
               </Button>
             </div>
           </div>
           <Typography variant="h5" color="gray" className="text-md">
-            {t("member")}: {loading ? "Loading..." : user || "Noma'lum"}
+            {t("member")}: {profileLoading ? user : user}
+            {/* profileLoading faqat birinchi ochilishda bo‘ladi, staleTime ichida keyin chiqmaydi */}
           </Typography>
         </CardHeader>
 
         <CardBody className="px-0">
-          <table className="w-full min-w-max table-auto text-left">
-            <thead>
-              <tr>
-                <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
-                  Social Media
-                </th>
-                <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
-                  Username
-                </th>
-              </tr>
-            </thead>
+          {mediaLoading && (
+            // Umuman loading spinner ishlatmaymiz, eski ma'lumot ko‘rinishi uchun bo‘sh qoldirmadik
+            null
+          )}
+          <table className="w-full table-auto text-left">
+            <thead>…</thead>
             <tbody>
               {Object.entries(usernames).map(
                 ([platform, username]) =>
                   username && (
                     <tr key={platform}>
-                      <td className="p-4 border-b border-blue-gray-50">
+                      <td>
                         {platform.charAt(0).toUpperCase() + platform.slice(1)}
                       </td>
-                      <td className="p-4 border-b border-blue-gray-50">
-                        {username}
-                      </td>
+                      <td>{username}</td>
                     </tr>
                   )
               )}
@@ -225,18 +147,12 @@ export default function SocialMediaTable() {
         <SocialMediaTableAdd
           open={openAdd}
           handleClose={() => setOpenAdd(false)}
-          newUsernames={newUsernames}
-          setNewUsernames={setNewUsernames}
+          newUsernames={usernames}
+          setNewUsernames={() => {}}
           handleAdd={handleAddUsernames}
-        />
-        <SocialMediaTableDelete
-          open={openDelete}
-          handleClose={() => setOpenDelete(false)}
-          handleDelete={handleDelete}
         />
       </Card>
     </div>
   );
 }
-
-// ////////
+// //// 
