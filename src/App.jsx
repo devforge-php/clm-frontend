@@ -18,6 +18,7 @@ import SocialMediaTable from "./pages/SocialMedia/SocialMediaRead";
 import PaymentResult from "./pages/PaymentResult";
 import { HelmetProvider } from "react-helmet-async";
 import Auth from "./pages/Auth";
+import NewTaskDetail from './pages/adminPanel/NewTaskDetail';
 export default function App() {
   return (
     <HelmetProvider>
@@ -38,6 +39,7 @@ export default function App() {
 
             {/* Admin sahifalari */}
             <Route path="newtask" element={<NewTask />} />
+            <Route path="newtaskDetail/:id" element={<NewTaskDetail />} />
             <Route path="allUsers" element={<AllUsers />} />
             <Route path="userDetails/:id" element={<UserDetails />} />
             {/* docs */}

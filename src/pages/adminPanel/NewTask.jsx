@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   DocumentPlusIcon,
+  EllipsisHorizontalIcon,
   PencilIcon,
   TrashIcon,
 } from "@heroicons/react/24/solid";
@@ -18,18 +19,9 @@ import { $apiAdmin } from "../../utils";
 import NewTaskAddModal from "../../components/NewTaskAddModal";
 import EditTaskModal from "../../components/EditTaskModal";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
+import { Link } from "react-router-dom";
 
-const TABLE_HEAD = [
-  "Image",
-  "Telegram",
-  "Instagram",
-  "YouTube",
-  "Twitter",
-  "Text",
-  "Number",
-  "Reward",
-  "Action",
-];
+const TABLE_HEAD = ["Image","ID", "Number", "Action"];
 
 export default function NewTask() {
   const [tasks, setTasks] = useState([]);
@@ -46,7 +38,7 @@ export default function NewTask() {
     twitter: "",
     text: "",
     number: "",
-    image_url:""
+    image_url: "",
   });
 
   const fetchData = async () => {
@@ -56,14 +48,14 @@ export default function NewTask() {
         Array.isArray(response.data)
           ? response.data?.data
           : response?.data?.data
-      );  
+      );
       // console.log(response.data.data);
     } catch (error) {
       console.error("Error fetching data:", error);
       setLoading(false);
-      if(error?.status === 401){
-        navigate('/login')
-        localStorage.clear()
+      if (error?.status === 401) {
+        navigate("/login");
+        localStorage.clear();
       }
       setTasks([]);
     }
@@ -146,11 +138,11 @@ export default function NewTask() {
     formDataToSend.append("text", formData.text);
     formDataToSend.append("number", formData.number);
     formDataToSend.append("reward", "gold");
-  
+
     if (formData.image) {
       formDataToSend.append("image", formData.image);
     }
-  
+
     try {
       const response = await $apiAdmin.post(
         `admin/tasks/${editId}`,
@@ -159,10 +151,10 @@ export default function NewTask() {
           headers: { "Content-Type": "multipart/form-data" },
         }
       );
-  
+
       // API javobini tekshiramiz
       console.log("Update response:", response.data);
-  
+
       // Ma'lumotlarni qayta yuklash
       await fetchData();
       // Modalni yopamiz va formani tozalaymiz
@@ -191,7 +183,7 @@ export default function NewTask() {
   const handleDeleteConfirm = async () => {
     try {
       await $apiAdmin.delete(`admin/tasks/${taskToDelete}`);
-      await fetchData(); 
+      await fetchData();
     } catch (error) {
       console.error("Error deleting task:", error);
     } finally {
@@ -199,10 +191,9 @@ export default function NewTask() {
       setTaskToDelete(null);
     }
   };
-  
 
   return (
-    <Card className="h-full  w-full  mx-auto m-4">
+    <Card className="h-full  w-[500px]  m-4">
       <CardHeader floated={false} shadow={false} className="rounded-none p-4">
         <div className="mb-4 flex flex-col justify-between gap-8 md:flex-row md:items-center">
           <Typography
@@ -223,7 +214,7 @@ export default function NewTask() {
           </div>
         </div>
       </CardHeader>
-      <CardBody className="px-0 overflow-x-auto ">
+      <CardBody className="px-0  p-2">
         <table className="w-full min-w-max table-auto text-left">
           <thead>
             <tr>
@@ -244,121 +235,27 @@ export default function NewTask() {
             </tr>
           </thead>
           <tbody>
-            {tasks.map((i, index) => {
-              const isLast = index === tasks.length - 1;
-              const classes = isLast
-                ? "p-4"
-                : "p-4 border-b border-blue-gray-50";
-
-              return (
-                <tr key={index}>
-                  <td className={classes}>
-                    <Avatar
-                      src={
-                        i?.image_url
-                          ? i?.image_url
-                          : "https://www.example.com/logo.svg"
-                      }
-                      alt="Task Image"
-                      size="md"
-                      className=""
-                    />
-                  </td>
-                  {/* <td className={classes}>
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                    >
-                      {i?.id || "-"}
-                    </Typography>
-                  </td> */}
-                  <td className={classes}>
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                    >
-                      {i?.telegram || "-"}
-                    </Typography>
-                  </td>
-                  <td className={classes}>
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                    >
-                      {i?.instagram || "-"}
-                    </Typography>
-                  </td>
-                  <td className={classes}>
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                    >
-                      {i?.youtube || "-"}
-                    </Typography>
-                  </td>
-                  <td className={classes}>
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                    >
-                      {i?.twitter || "-"}
-                    </Typography>
-                  </td>
-                  <td className={classes}>
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                    >
-                      {i?.text || "-"}
-                    </Typography>
-                  </td>
-                  <td className={classes}>
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                    >
-                      {i?.number || "-"}
-                    </Typography>
-                  </td>
-                  <td className={classes}>
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                    >
-                      {i?.reward || "-"}
-                    </Typography>
-                  </td>
-                  <td className={classes}>
-                    <Tooltip content="Edit Task">
-                      <IconButton
-                        variant="text"
-                        className="text-yellow-700"
-                        onClick={() => handleEditOpen(i)}
-                      >
-                        <PencilIcon className="h-4 w-4" />
+            {tasks.map((task, index) => (
+              <tr key={task.id}>
+                <td> <Avatar
+                        src={task?.image_url || "https://www.example.com/logo.svg"}
+                        alt="Task Image"
+                        size="md"
+                        className="mb-4 "
+                      /></td>
+                <td className="p-4">{task.id}</td>
+                <td className="p-4">{task.number}</td>
+                <td className="p-4">
+                  <Tooltip content="View Details">
+                    <Link to={`/newtaskDetail/${task.id}`}>
+                      <IconButton variant="text" className="text-blue-700">
+                        <EllipsisHorizontalIcon className="h-10 w-10" />
                       </IconButton>
-                    </Tooltip>
-                    <Tooltip content="Delete Task">
-                      <IconButton
-                        variant="text"
-                        className="text-red-700"
-                        onClick={() => handleDeleteOpen(i.id)}
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </IconButton>
-                    </Tooltip>
-                  </td>
-                </tr>
-              );
-            })}
+                    </Link>
+                  </Tooltip>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </CardBody>
@@ -371,15 +268,15 @@ export default function NewTask() {
         handleImageChange={handleImageChange}
         handleSave={handleSave}
       />
-     <EditTaskModal
-  open={editOpen}
-  handleOpen={() => setEditOpen(!editOpen)}
-  formData={formData}
-  handleInputChange={handleInputChange}
-  handleImageChange={handleImageChange}
-  handleUpdate={handleUpdate}
-  editId={editId} 
-/>
+      <EditTaskModal
+        open={editOpen}
+        handleOpen={() => setEditOpen(!editOpen)}
+        formData={formData}
+        handleInputChange={handleInputChange}
+        handleImageChange={handleImageChange}
+        handleUpdate={handleUpdate}
+        editId={editId}
+      />
 
       <DeleteConfirmationModal
         open={deleteOpen}
