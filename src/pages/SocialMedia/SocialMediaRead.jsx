@@ -11,7 +11,6 @@ import { $api } from "../../utils/index";
 import { useTranslation } from "react-i18next";
 import SocialMediaTableEdit from "../../components/SocialMediaTableEdit";
 import SocialMediaTableAdd from "../../components/SocialMediaTableAdd";
-import SocialMediaTableDelete from "../../components/SocialMediaTableDelete";
 import { Helmet } from "react-helmet";
 
 export default function SocialMediaTable() {
@@ -39,26 +38,40 @@ export default function SocialMediaTable() {
   const fetchUserProfile = async () => {
     try {
       const response = await $api.get("/profile");
-      setUser(response.data.user.username);
+      // console.log(response.data)
+      const profileData = response.data;
+       
+      if (profileData && profileData.user) {
+        setUser(profileData.user.username); // username
+        localStorage.setItem("id", profileData.user.id); // foydalanuvchi id
+      }
     } finally {
       setLoading(false);
     }
   };
-
+  
   const fetchUsernames = async () => {
     try {
       const response = await $api.get("/socialMedia");
-      const firstItem = response.data.data[0];
+      const firstItem = response.data[0];
+  
       if (firstItem) {
-        const { id, telegram, instagram, facebook, youtube, twitter } =
-          firstItem;
-        setSocialMediaId(id); // bu yerda id'ni saqlaymiz
+        const {
+          id,
+          telegram_user_name,
+          instagram_user_name,
+          facebook_user_name,
+          youtube_user_name,
+          twitter_user_name,
+        } = firstItem;
+  
+        setSocialMediaId(id); // ID'ni saqlaymiz
         setUsernames({
-          telegram: telegram || "",
-          instagram: instagram || "",
-          facebook: facebook || "",
-          youtube: youtube || "",
-          twitter: twitter || "",
+          telegram: telegram_user_name || "",
+          instagram: instagram_user_name || "",
+          facebook: facebook_user_name || "",
+          youtube: youtube_user_name || "",
+          twitter: twitter_user_name || "",
         });
       }
     } catch (error) {
@@ -69,50 +82,33 @@ export default function SocialMediaTable() {
       }
     }
   };
+  
 
   const handleSaveEdit = async (updatedUsernames) => {
     try {
-      const params = new URLSearchParams();
-
-      if (updatedUsernames.telegram)
-        params.append("telegram_user_name", updatedUsernames.telegram);
-      if (updatedUsernames.instagram)
-        params.append("instagram_user_name", updatedUsernames.instagram);
-      if (updatedUsernames.facebook)
-        params.append("facebook_user_name", updatedUsernames.facebook);
-      if (updatedUsernames.youtube)
-        params.append("youtube_user_name", updatedUsernames.youtube);
-      if (updatedUsernames.twitter)
-        params.append("twitter_user_name", updatedUsernames.twitter);
-
+      const userId = localStorage.getItem("id");
+  
+      const payload = {};
+      if (updatedUsernames.telegram) payload.telegram_user_name = updatedUsernames.telegram;
+      if (updatedUsernames.instagram) payload.instagram_user_name = updatedUsernames.instagram;
+      if (updatedUsernames.facebook) payload.facebook_user_name = updatedUsernames.facebook;
+      if (updatedUsernames.youtube) payload.youtube_user_name = updatedUsernames.youtube;
+      if (updatedUsernames.twitter) payload.twitter_user_name = updatedUsernames.twitter;
+  
       if (socialMediaId) {
-        await $api.put(`/socialMedia/${socialMediaId}?${params.toString()}`);
-        await fetchUsernames();
+        await $api.patch(`/socialMedia/${socialMediaId}`, payload);
+        console.log("PATCH sent with:", payload);
+        await fetchUsernames(); // reload data
       } else {
-        console.warn("ID mavjud emas, PUT so‘rov yuborilmadi.");
+        console.warn("ID not available, PATCH request not sent.");
       }
     } catch (error) {
-      console.error(
-        "Error updating usernames:",
-        error.response?.data || error.message
-      );
+      console.error("Error updating usernames:", error.response?.data || error.message);
     } finally {
       setOpenEdit(false);
     }
   };
-
-  // Barcha linklarni o‘chirish uchun yangi handleDelete
-  const handleDelete = async () => {
-    try {
-      // Backend’da barcha ijtimoiy tarmoqlarni o‘chirish uchun umumiy endpoint ishlatamiz
-      await $api.delete("/socialMedia"); // Bu yerda umumiy DELETE so‘rovi yuboriladi
-      setUsernames({}); // Frontend’da usernames holatini tozalaymiz
-    } catch (error) {
-      console.error("Error deleting all usernames:", error);
-    } finally {
-      setOpenDelete(false);
-    }
-  };
+  
 
   const handleAddUsernames = async (newData) => {
     try {
@@ -123,12 +119,10 @@ export default function SocialMediaTable() {
         youtube_user_name: newData.youtube || "",
         twitter_user_name: newData.twitter || "",
       };
-      const hasData = Object.values(payload).some(
-        (value) => value.trim() !== ""
-      );
+      const hasData = Object.values(payload).some((value) => value.trim() !== "");
       if (hasData) {
         await $api.post("/socialMedia", payload);
-        await fetchUsernames();
+        await fetchUsernames(); // Yangi username qo'shilganda yangilash
       }
     } catch (error) {
       console.error("Error adding usernames:", error);
@@ -168,14 +162,6 @@ export default function SocialMediaTable() {
                 <UserPlusIcon strokeWidth={2} className="h-4 w-4" /> Add
                 Username
               </Button>
-              {/* <Button
-              className="flex items-center gap-3"
-              size="sm"
-              color="red"
-              onClick={() => setOpenDelete(true)}
-            >
-              <TrashIcon strokeWidth={2} className="h-4 w-4" /> Delete
-            </Button> */}
             </div>
           </div>
           <Typography variant="h5" color="gray" className="text-md">
@@ -226,9 +212,7 @@ export default function SocialMediaTable() {
           setNewUsernames={setNewUsernames}
           handleAdd={handleAddUsernames}
         />
-    
       </Card>
     </div>
   );
 }
-// uffffbilaaaaa

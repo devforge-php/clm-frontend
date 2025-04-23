@@ -48,7 +48,7 @@ export default function Footer() {
                         <FaTwitter />
                     </a>
                     <a
-                        href="c"
+                        href="https://t.me/Company_Logistics_Marketing"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="hover:text-sky-500 hover:scale-125 transition-all duration-300"

@@ -26,7 +26,7 @@ $api.interceptors.request.use(
     }
 );
 
-// 401 holatni tutish va login sahifasiga yo‘naltirish
+
 $api.interceptors.response.use(
     response => response,
     error => {
