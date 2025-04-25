@@ -97,7 +97,7 @@ export default function SocialMediaTable() {
   
       if (socialMediaId) {
         await $api.patch(`/socialMedia/${socialMediaId}`, payload);
-        console.log("PATCH sent with:", payload);
+        // console.log("PATCH sent with:", payload);
         await fetchUsernames(); // reload data
       } else {
         console.warn("ID not available, PATCH request not sent.");

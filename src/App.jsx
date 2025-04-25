@@ -19,6 +19,7 @@ import PaymentResult from "./pages/PaymentResult";
 import { HelmetProvider } from "react-helmet-async";
 import Auth from "./pages/Auth";
 import NewTaskDetail from './pages/adminPanel/NewTaskDetail';
+import ResetUsersPage from './pages/adminPanel/ResetUsersPage';
 export default function App() {
   return (
     <HelmetProvider>
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="newtaskDetail/:id" element={<NewTaskDetail />} />
             <Route path="allUsers" element={<AllUsers />} />
             <Route path="userDetails/:id" element={<UserDetails />} />
+            <Route path="resetUsers" element={<ResetUsersPage />} />
             {/* docs */}
             <Route path="/docs" element={<Docs />} />
           </Route>

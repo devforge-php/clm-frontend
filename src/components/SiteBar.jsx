@@ -113,10 +113,11 @@ export default function SiteBar() {
               </>
             )}
 
-            {role === "admin" && (
+            {role === "admin" && ( 
               <>
                 {renderLink("/newtask", <ClipboardDocumentListIcon className="h-5 w-5" />, t("newTask"))}
                 {renderLink("/allUsers", <UserGroupIcon className="h-5 w-5" />, t("allUsers"))}
+                {renderLink("/resetUsers", <UserGroupIcon className="h-5 w-5" />, t("Reset Users"))}
               </>
             )}
 
